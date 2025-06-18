@@ -6,6 +6,9 @@ A sleek bar for BTDE
 > This is still under development and may have noticeable bugs.
 
 
+## Screenshot
+![Better bar preview](./.github/screenshot.png)
+
 ### Prerequisites
 - Rust (latest stable)
 - GTK4
@@ -41,3 +44,14 @@ better-bar
 ### In Progress
 
 - [ ] Add settings for the bar.
+
+
+### Done
+
+- [x] Workspace indicator (Hyprland)
+- [x] Window title
+- [x] Battery indicator
+- [x] Network status
+- [x] Volume control
+- [x] CPU usage
+- [x] Clock
