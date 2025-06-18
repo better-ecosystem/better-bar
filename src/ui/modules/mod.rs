@@ -1,0 +1,9 @@
+pub mod panel;
+pub mod hyprland;
+pub mod clock;
+pub mod volume;
+pub mod battery;
+pub mod network;
+pub mod launcher;
+pub mod cpu;
+pub mod memory;

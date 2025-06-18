@@ -1,0 +1,25 @@
+[package]
+name = "better-bar"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+gtk = { version = "0.8.2", package = "gtk4", features = ["v4_12"] }
+gtk4-layer-shell = "0.3.0"
+adw = { version = "0.6.0", package = "libadwaita", features = ["v1_4"] }
+gio = { version = "0.19.5", package = "gio", features = ["v2_76"] }
+glib = { version = "0.19.5", package = "glib", features = ["v2_76"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+tokio = { version = "1", features = ["full"] }
+hyprland = "0.4.0-beta.2"
+once_cell = "1.5"
+futures = "0.3"
+
+# for system info
+sysinfo = "0.35.2"
+battery = "0.7"
+lazy_static = "1.4"
+zbus = "3.14"
+zvariant = "3.14"
