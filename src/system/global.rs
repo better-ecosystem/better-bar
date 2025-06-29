@@ -19,6 +19,10 @@ pub fn _get_hostname() -> String {
     host_name.unwrap().to_string()
 }
 
+pub fn reload_bar(){
+    println!("reload bar");
+}
+
 // pub fn _get_current_session() -> String {
 //     std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_else(|_| "Unknown".to_string())
 // }
