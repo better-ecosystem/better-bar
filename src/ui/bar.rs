@@ -5,7 +5,7 @@ use gtk4_layer_shell::{KeyboardMode, Layer, LayerShell};
 
 use crate::ui::logger::{LogLevel, Logger};
 use crate::ui::modules::panel::PanelBuilder;
-use crate::ui::settings::show_panel_settings;
+use crate::ui::settings::settings::show_panel_settings;
 use crate::ui::styles::load_css;
 use lazy_static::lazy_static;
 

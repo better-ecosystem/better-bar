@@ -1,8 +1,8 @@
-use std::{env, process::Command};
-use gtk::{gdk::Key, prelude::*, EventControllerKey};
+use gtk::{gdk::Key, prelude::*,Box, Orientation, EventControllerKey, Label, Notebook};
 use lazy_static::lazy_static;
+use std::{env, process::Command};
 
-use crate::ui::logger::{LogLevel, Logger};
+use crate::ui::{logger::{LogLevel, Logger}, settings::{config_page::{create_config_page}, modules_page::create_modules_page}};
 
 lazy_static! {
     static ref LOG: Logger = Logger::new(LogLevel::Debug);
@@ -20,61 +20,55 @@ pub fn show_panel_settings() {
         .resizable(true)
         .build();
 
-    // Add dummyy options for now
-    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    vbox.set_margin_top(20);
-    vbox.set_margin_bottom(20);
-    vbox.set_margin_start(20);
-    vbox.set_margin_end(20);
+    let notebook = Notebook::new();
 
-    let label = gtk::Label::new(Some("Panel Configuration"));
-    label.add_css_class("heading");
-    vbox.append(&label);
+    let config_page = create_config_page();
+    let modules_page = create_modules_page();
 
-    let height_box = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    let height_label = gtk::Label::new(Some("Panel Height:"));
-    let height_spin = gtk::SpinButton::with_range(20.0, 100.0, 1.0);
-    height_box.set_can_focus(false);
-    height_spin.set_value(40.0);
-    height_box.append(&height_label);
-    height_box.append(&height_spin);
-    vbox.append(&height_box);
-    
-    let autohide_box = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    let autohide_label = gtk::Label::new(Some("Auto-hide Panel:"));
-    let autohide_switch = gtk::Switch::new();
-    autohide_box.set_can_focus(false);
-    autohide_box.append(&autohide_label);
-    autohide_box.append(&autohide_switch);
-    vbox.append(&autohide_box);
+    // Add Configuration page to notebook
+    let config_tab_label = Label::new(Some("Configuration"));
+    notebook.append_page(&config_page, Some(&config_tab_label));
+
+    // Add Modules page to notebook
+    let modules_tab_label = gtk::Label::new(Some("Modules"));
+    notebook.append_page(&modules_page, Some(&modules_tab_label));
 
     // Close button
+    let button_box = Box::new(Orientation::Horizontal, 12);
+    button_box.set_halign(gtk::Align::End);
+    button_box.set_margin_top(20);
+    button_box.set_margin_end(20);
+    button_box.set_margin_bottom(20);
+
     let close_button = gtk::Button::with_label("Close");
     let window_clone = settings_window.clone();
     close_button.connect_clicked(move |_| {
         window_clone.close();
     });
+    button_box.append(&close_button);
 
-    vbox.append(&close_button);
-    settings_window.set_child(Some(&vbox));
+    // Main box
+    let main_vbox = Box::new(Orientation::Vertical, 0);
+    main_vbox.append(&notebook);
+    main_vbox.append(&button_box);
+
+    settings_window.set_child(Some(&main_vbox));
 
     // Keybinds for settings window
     let key_controller = EventControllerKey::new();
     let settings_window_clone = settings_window.clone();
-    key_controller.connect_key_pressed(move |_controller, key, _keycode, _state| {
-        match key {
-            Key::Escape => {
-                LOG.debug("Settings -> Closing setting window");
-                settings_window_clone.close();
-                true.into()
-            }
-            Key::q | Key::Q => {
-                LOG.debug("Settings -> Closing setting window");
-                settings_window_clone.close();
-                true.into()
-            }
-            _ => false.into()
+    key_controller.connect_key_pressed(move |_controller, key, _keycode, _state| match key {
+        Key::Escape => {
+            LOG.debug("Settings -> Closing setting window");
+            settings_window_clone.close();
+            true.into()
         }
+        Key::q | Key::Q => {
+            LOG.debug("Settings -> Closing setting window");
+            settings_window_clone.close();
+            true.into()
+        }
+        _ => false.into(),
     });
     settings_window.add_controller(key_controller);
     settings_window.present();
