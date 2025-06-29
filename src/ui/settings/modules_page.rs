@@ -1,6 +1,6 @@
 use gtk::{prelude::*, Box, Label, Orientation, Switch};
 
-pub fn create_modules_page() -> Box {
+pub fn create_modules_page() -> Box {    
     let modules_page = Box::new(Orientation::Vertical, 12);
     modules_page.set_margin_top(20);
     modules_page.set_margin_bottom(20);
