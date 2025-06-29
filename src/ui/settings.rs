@@ -1,3 +1,5 @@
+use std::{env, process::Command};
+
 use gtk::prelude::*;
 use lazy_static::lazy_static;
 
@@ -9,16 +11,17 @@ lazy_static! {
 
 pub fn show_panel_settings() {
     LOG.debug("Opening panel settings window");
+    set_window_floating_rules();
 
     // Create a regular window for settings
     let settings_window = gtk::Window::builder()
         .title("panel_settings")
-        .default_width(400)
-        .default_height(300)
+        .default_width(600)
+        .default_height(600)
         .resizable(true)
         .build();
 
-    // Add dummyy options for now 
+    // Add dummyy options for now
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 12);
     vbox.set_margin_top(20);
     vbox.set_margin_bottom(20);
@@ -46,8 +49,6 @@ pub fn show_panel_settings() {
 
     // Close button
     let close_button = gtk::Button::with_label("Close");
-    close_button.add_css_class("suggested-action");
-
     let window_clone = settings_window.clone();
     close_button.connect_clicked(move |_| {
         window_clone.close();
@@ -56,4 +57,42 @@ pub fn show_panel_settings() {
     vbox.append(&close_button);
     settings_window.set_child(Some(&vbox));
     settings_window.present();
+}
+
+fn set_window_floating_rules() {
+    let xdg = env::var("XDG_CURRENT_DESKTOP")
+        .unwrap_or_default()
+        .to_lowercase();
+    let sway_sock = env::var("SWAYSOCK").unwrap_or_default().to_lowercase();
+
+    if xdg.contains("hyprland") {
+        match Command::new("hyprctl")
+            .args(["keyword", "windowrule", "float,title:^(panel_settings)$"])
+            .output()
+        {
+            Ok(_) => {
+                LOG.debug("Successfully set hyprland window rule");
+            }
+            Err(e) => {
+                LOG.error(&format!("Failed to set hyprland window rule: {}", e));
+            }
+        }
+    } else if sway_sock.contains("sway") {
+        match Command::new("swaymsg")
+            .args([
+                "for_window",
+                "[title=\"^panel_settings$\"]",
+                "floating",
+                "enable",
+            ])
+            .output()
+        {
+            Ok(_) => {
+                LOG.debug("Successfully set sway window rule");
+            }
+            Err(e) => {
+                LOG.error(&format!("Failed to set sway window rule: {}", e));
+            }
+        }
+    }
 }
