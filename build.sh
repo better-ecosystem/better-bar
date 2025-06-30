@@ -8,7 +8,7 @@ cargo build --release
 echo "<--------- Build finished --------->"
 
 # install
-echo "<--------- Installing better-bar --------->\n"
+echo "<--------- Installing better-bar --------->"
 cp target/release/better-bar ~/.local/bin/
 echo "<--------- Installed better-bar --------->"
 
