@@ -14,7 +14,7 @@ use crate::ui::logger::{LogLevel, Logger};
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("window_title",LogLevel::Debug);
 }
 pub struct WindowWidget {
     container: Box,
@@ -76,8 +76,7 @@ impl WindowWidget {
 
             let tx1 = tx.clone();
             event_listener.add_active_window_changed_handler(move |_| {
-                let log = Logger::new(LogLevel::Debug);
-                log.debug("hyprland-window -> active window changed");
+                LOG.debug("active window changed");
                 let title = get_current_title();
                 if let Err(e) = tx1.send(title) {
                     eprintln!("Failed to send window title: {}", e);
@@ -86,7 +85,7 @@ impl WindowWidget {
 
             let tx2 = tx.clone();
             event_listener.add_workspace_changed_handler(move |_| {
-                LOG.debug("hyprland-window -> active workspace changed");
+                LOG.debug("active workspace changed");
                 let title = get_current_title();
                 if let Err(e) = tx2.send(title) {
                     eprintln!("Failed to send window title: {}", e);
@@ -95,10 +94,10 @@ impl WindowWidget {
 
             let tx3 = tx.clone();
             event_listener.add_window_closed_handler(move |_| {
-                LOG.debug("hyprland-window -> active window closed");
+                LOG.debug("active window closed");
                 let title = get_current_title();
                 if let Err(e) = tx3.send(title) {
-                    LOG.error(&format!("hyprland-window -> Failed to send window title: {}", e));
+                    LOG.error(&format!("Failed to send window title: {}", e));
                 }
             });
 

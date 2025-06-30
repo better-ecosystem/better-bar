@@ -10,7 +10,7 @@ use crate::ui::styles::load_css;
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("bar",LogLevel::Debug);
 }
 pub fn create_main_bar(app: &Application) {
     load_css();
@@ -30,7 +30,7 @@ pub fn create_main_bar(app: &Application) {
 
     window.connect_close_request(|_| {
         LOG.debug("bar window closed");
-        gtk::glib::Propagation::Proceed
+        glib::Propagation::Proceed
     });
 
     window.present();

@@ -4,7 +4,7 @@ use crate::ui::logger::{LogLevel, Logger};
 use super::network_info::get_network_info;
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("network",LogLevel::Debug);
 }
 
 pub struct NetworkUpdater;

@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use crate::ui::logger::{LogLevel, Logger};
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("memory",LogLevel::Debug);
 }
 
 // Derived from waybar

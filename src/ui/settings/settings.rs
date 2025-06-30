@@ -5,7 +5,7 @@ use std::{env, process::Command};
 use crate::ui::{logger::{LogLevel, Logger}, settings::{config_page::{create_config_page}, modules_page::create_modules_page}};
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("settings",LogLevel::Debug);
 }
 
 pub fn show_panel_settings() {
@@ -59,12 +59,12 @@ pub fn show_panel_settings() {
     let settings_window_clone = settings_window.clone();
     key_controller.connect_key_pressed(move |_controller, key, _keycode, _state| match key {
         Key::Escape => {
-            LOG.debug("Settings -> Closing setting window");
+            LOG.debug("Closing setting window");
             settings_window_clone.close();
             true.into()
         }
         Key::q | Key::Q => {
-            LOG.debug("Settings -> Closing setting window");
+            LOG.debug("Closing setting window");
             settings_window_clone.close();
             true.into()
         }

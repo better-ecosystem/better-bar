@@ -1,6 +1,6 @@
 
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::{env, fs};
 use std::io::Write;
 use std::path::{PathBuf};
 use toml;
@@ -44,8 +44,9 @@ impl Config {
     }
 
     pub fn get_config_path() -> PathBuf {
-        let home = dirs::home_dir().expect("Could not find home directory");
-        home.join(".config").join("better-bar").join("config.toml")
+        let home = env::var("HOME")
+            .expect("Could not find home directory");
+        PathBuf::from(home).join(".config").join("better-bar").join("config.toml")
     }
 
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {

@@ -14,7 +14,7 @@ use crate::ui::logger::{LogLevel, Logger};
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("workspaces",LogLevel::Debug);
 }
 
 #[derive(Clone)]

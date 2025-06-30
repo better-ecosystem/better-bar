@@ -12,7 +12,7 @@ use gtk::{glib, prelude::*};
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new(LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("updater",LogLevel::Debug);
 }
 
 pub struct SystemUpdater {
@@ -67,24 +67,24 @@ impl SystemUpdater {
         glib::spawn_future_local(async move {
             match std::panic::catch_unwind(|| start_volume_monitor()) {
                 Ok(mut volume_rx) => {
-                    LOG.debug("updater -> volume monitor started successfully");
+                    LOG.debug("volume monitor started successfully");
                     
                     while volume_label.is_visible() {
                         match volume_rx.recv().await {
                             Some(volume) => {
                                 volume_label.set_text(&volume);
-                                LOG.debug("updater ->  updated volume label");
+                                LOG.debug("updated volume label");
                             }
                             None => {
-                                LOG.debug("updater -> volume monitor channel closed");
+                                LOG.debug("volume monitor channel closed");
                                 break;
                             }
                         }
                     }
-                    LOG.debug("updater -> volume updater stopped");
+                    LOG.debug("volume updater stopped");
                 }
                 Err(e) => {
-                    LOG.error(&format!("updater -> Failed to start volume monitor: {:?}", e));
+                    LOG.error(&format!("Failed to start volume monitor: {:?}", e));
                 }
             }
         });
