@@ -11,8 +11,13 @@ lazy_static! {
 }
 
 pub fn create_modules_page() -> Box {
-    let config = config_helper::get_config().unwrap();
-    let config_clone = config.clone();
+    let config = match config_helper::get_config() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            LOG.error(&format!("Failed to load config: {}", e));
+            return Box::new(Orientation::Vertical, 12); // Return empty box on error
+        }
+    };
 
     let modules_page = Box::new(Orientation::Vertical, 12);
     modules_page.set_margin_top(20);
@@ -25,29 +30,11 @@ pub fn create_modules_page() -> Box {
     modules_page.append(&modules_label);
 
     // Create a shared config state to be updated by all switches
-    let config_state = Rc::new(RefCell::new(config_clone.clone()));
+    let config_state = Rc::new(RefCell::new(config.clone()));
 
-    // Clock module
-    let clock_box = Box::new(Orientation::Horizontal, 12);
-    let clock_label = Label::new(Some("Show Clock:"));
-    let clock_switch = Switch::new();
-    clock_switch.set_active(config.modules.clock);
-    clock_box.append(&clock_label);
-    clock_box.append(&clock_switch);
-    modules_page.append(&clock_box);
-
-    // Connect clock switch
-    let config_ref = config_state.clone();
-    clock_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.clock = state;
-        LOG.debug(&format!("Clock module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-
-    // Cpu module
+    // CPU module
     let cpu_box = Box::new(Orientation::Horizontal, 12);
-    let cpu_label = Label::new(Some("Show Cpu usage:"));
+    let cpu_label = Label::new(Some("Show CPU usage:"));
     let cpu_switch = Switch::new();
     cpu_switch.set_active(config.modules.cpu);
     cpu_box.append(&cpu_label);
@@ -60,6 +47,24 @@ pub fn create_modules_page() -> Box {
         let mut config = config_ref.borrow_mut();
         config.modules.cpu = state;
         LOG.debug(&format!("CPU module set to: {}", state));
+        glib::Propagation::Proceed
+    });
+
+    // Memory module
+    let memory_box = Box::new(Orientation::Horizontal, 12);
+    let memory_label = Label::new(Some("Show Memory usage:"));
+    let memory_switch = Switch::new();
+    memory_switch.set_active(config.modules.memory);
+    memory_box.append(&memory_label);
+    memory_box.append(&memory_switch);
+    modules_page.append(&memory_box);
+
+    // Connect Memory switch
+    let config_ref = config_state.clone();
+    memory_switch.connect_state_set(move |_, state| {
+        let mut config = config_ref.borrow_mut();
+        config.modules.memory = state;
+        LOG.debug(&format!("Memory module set to: {}", state));
         glib::Propagation::Proceed
     });
 
@@ -81,11 +86,11 @@ pub fn create_modules_page() -> Box {
         glib::Propagation::Proceed
     });
 
-    // Workspace module (assuming we need to add this to the config)
+    // Workspace module
     let workspace_box = Box::new(Orientation::Horizontal, 12);
     let workspace_label = Label::new(Some("Workspaces:"));
     let workspace_switch = Switch::new();
-    workspace_switch.set_active(true); // Default to true as per your code
+    workspace_switch.set_active(config.modules.workspaces);
     workspace_box.append(&workspace_label);
     workspace_box.append(&workspace_switch);
     modules_page.append(&workspace_box);
@@ -152,7 +157,7 @@ pub fn create_modules_page() -> Box {
         LOG.debug(&format!("Volume module set to: {}", state));
         glib::Propagation::Proceed
     });
-    
+
     let button_box = Box::new(Orientation::Horizontal, 12);
     button_box.set_halign(gtk::Align::End);
     button_box.set_margin_top(20);
@@ -161,26 +166,20 @@ pub fn create_modules_page() -> Box {
     button_box.append(&apply_button);
     modules_page.append(&button_box);
 
-    // Connect Apply button
     let config_ref = config_state.clone();
     apply_button.connect_clicked(move |_| {
         let config = config_ref.borrow().clone();
 
-        // Update the global config
-        match config_helper::get_config_mut() {
-            Ok(mut global_config) => {
-                global_config.modules = config.modules.clone();
+        LOG.debug("Attempting to save configuration...");
 
-                // Save the updated config
-                match config_helper::save_config() {
-                    Ok(_) => {
-                        LOG.debug("Config saved successfully");
-                        LOG.debug("Settings applied, manual panel restart may be required");
-                    },
-                    Err(e) => LOG.error(&format!("Failed to save config: {}", e)),
-                }
+        match config.save() {
+            Ok(_) => {
+                LOG.debug("Config saved successfully");
+                LOG.debug("Settings applied, manual panel restart may be required");
             },
-            Err(e) => LOG.error(&format!("Failed to get mutable config: {}", e)),
+            Err(e) => {
+                LOG.error(&format!("Failed to save config: {}", e));
+            }
         }
     });
 

@@ -1,15 +1,13 @@
 use gtk::{Align, ApplicationWindow, Box as GtkBox, CenterBox, Label, Orientation, prelude::*};
 
 use super::clock::ClockModule;
-use crate::{
-    system::{global::_is_hyprland_session, system_info_modules::SystemInfoModule, updater::SystemUpdater},
-    ui::modules::{
-        hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
-        launcher::app_launcher::LauncherWidget,
-    },
-};
+use crate::{system::{global::_is_hyprland_session, system_info_modules::SystemInfoModule, updater::SystemUpdater}, ui::modules::{
+    hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
+    launcher::app_launcher::LauncherWidget,
+}};
 
 use std::rc::Rc;
+use crate::config::config_helper::get_config;
 
 #[derive(Clone)]
 pub struct PanelState {
@@ -49,6 +47,8 @@ impl PanelBuilder {
     }
 
     pub fn build(&self, window: &ApplicationWindow) -> PanelState {
+        let config = get_config().unwrap();
+
         let main_box = CenterBox::new();
         main_box.set_widget_name("bar");
         main_box.set_margin_top(4);
@@ -66,17 +66,23 @@ impl PanelBuilder {
         left_box.append(_launcher.widget());
 
         // Show only for hyprland session
-        let (_workspace_widget, _window_title) = if _is_hyprland_session() {
-            let workspace_widget = Rc::new(WorkspaceWidget::new());
-            let window_title = Rc::new(WindowWidget::new());
+        let mut _workspace_widget: Option<Rc<WorkspaceWidget>> = None;
+        let mut _window_title: Option<Rc<WindowWidget>> = None;
 
-            left_box.append(workspace_widget.widget());
-            left_box.append(window_title.widget());
-
-            (Some(workspace_widget), Some(window_title))
-        } else {
-            (None, None)
-        };
+        // Only try to initialize them if we're in a Hyprland session
+        if _is_hyprland_session() {
+            if config.modules.workspaces {
+                let widget = Rc::new(WorkspaceWidget::new());
+                left_box.append(widget.widget());
+                _workspace_widget = Some(widget);
+            }
+            
+            if config.modules.window_title {
+                let widget = Rc::new(WindowWidget::new());
+                left_box.append(widget.widget());
+                _window_title = Some(widget);
+            }
+        }
 
         // Center section
         let center_box = GtkBox::new(Orientation::Horizontal, 0);

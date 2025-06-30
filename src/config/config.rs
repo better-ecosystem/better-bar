@@ -13,7 +13,6 @@ pub struct PanelConfig {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ModulesConfig {
-    pub clock: bool,
     pub cpu: bool,
     pub memory: bool,
     pub battery: bool,
@@ -37,7 +36,6 @@ impl Config {
                 height: 30,
             },
             modules: ModulesConfig {
-                clock: true,
                 cpu: true,
                 memory: true,
                 battery: true,
