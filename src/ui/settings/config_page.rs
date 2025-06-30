@@ -1,11 +1,9 @@
-use gtk::{prelude::*, Box, Label, Orientation, SpinButton, DropDown, Button};
+use gtk::{prelude::*, Box, Label, Orientation, SpinButton, DropDown};
 use crate::config::config_helper;
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::ui::logger::{LogLevel, Logger};
 
 pub fn create_config_page() -> Box {
-    let log = Logger::new("config_page", LogLevel::Debug);
     let config_page = Box::new(Orientation::Vertical, 12);
     config_page.set_margin_top(20);
     config_page.set_margin_bottom(20);
@@ -69,44 +67,6 @@ pub fn create_config_page() -> Box {
     height_spin.connect_value_changed(move |spin| {
         let height = spin.value() as u32;
         pending_changes_clone.borrow_mut().height = Some(height);
-    });
-    
-    // Create a button container
-    let button_box = Box::new(Orientation::Horizontal, 12);
-    button_box.set_halign(gtk::Align::End);
-    button_box.set_margin_top(20);
-    
-    // Add Apply button
-    let apply_button = Button::with_label("Apply");
-    button_box.append(&apply_button);
-    config_page.append(&button_box);
-    
-    // Connect Apply button to save configuration
-    apply_button.connect_clicked(move |_| {
-        if let Ok(mut config) = config_helper::get_config_mut() {
-            let changes = pending_changes.borrow();
-            
-            // Apply pending changes to config
-            if let Some(position) = &changes.position {
-                log.debug(&format!("Changing panel position to: {}", position));
-                config.panel.position = position.clone();
-            }
-            
-            if let Some(height) = changes.height {
-                log.debug(&format!("Changing panel height to: {}", height));
-                config.panel.height = height;
-            }
-            
-            // Save the updated configuration and notify listeners
-            if let Err(err) = config_helper::save_config() {
-                log.error(&format!("Failed to save configuration: {}", err));
-            } else {
-                // Clear pending changes after successful save
-                pending_changes.borrow_mut().position = None;
-                pending_changes.borrow_mut().height = None;
-                log.debug("Configuration applied successfully");
-            }
-        }
     });
     
     config_page

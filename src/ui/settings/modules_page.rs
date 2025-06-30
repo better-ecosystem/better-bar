@@ -1,4 +1,4 @@
-use gtk::{prelude::*, Box, Button, Label, Orientation, Switch};
+use gtk::{prelude::*, Box, Label, Orientation, Switch};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -157,31 +157,6 @@ pub fn create_modules_page() -> Box {
         LOG.debug(&format!("Volume module set to: {}", state));
         glib::Propagation::Proceed
     });
-
-    let button_box = Box::new(Orientation::Horizontal, 12);
-    button_box.set_halign(gtk::Align::End);
-    button_box.set_margin_top(20);
-
-    let apply_button = Button::with_label("Apply");
-    button_box.append(&apply_button);
-    modules_page.append(&button_box);
-
-    let config_ref = config_state.clone();
-    apply_button.connect_clicked(move |_| {
-        let config = config_ref.borrow().clone();
-
-        LOG.debug("Attempting to save configuration...");
-
-        match config.save() {
-            Ok(_) => {
-                LOG.debug("Config saved successfully");
-                LOG.debug("Settings applied, manual panel restart may be required");
-            },
-            Err(e) => {
-                LOG.error(&format!("Failed to save config: {}", e));
-            }
-        }
-    });
-
+    
     modules_page
 }
