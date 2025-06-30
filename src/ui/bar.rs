@@ -26,46 +26,13 @@ pub fn create_main_bar(app: &Application) {
     let panel_state = panel_builder.build(&window);
     panel_state.start_updates();
     panel_state.refresh_workspaces();
-
-    setup_context_menu(&window);
-
+    
     window.connect_close_request(|_| {
         LOG.debug("bar window closed");
         glib::Propagation::Proceed
     });
 
     window.present();
-}
-
-fn setup_context_menu(window: &ApplicationWindow) {
-    let menu = Menu::new();
-    menu.append(Some("Panel Settings"), Some("bar.settings"));
-
-    let popover = PopoverMenu::from_model(Some(&menu));
-    popover.set_parent(window);
-
-    let actions = SimpleActionGroup::new();
-
-    let settings_action = gio::SimpleAction::new("settings", None);
-    settings_action.connect_activate(move |_, _| {
-        show_panel_settings();
-    });
-
-    actions.add_action(&settings_action);
-    window.insert_action_group("bar", Some(&actions));
-
-    let gesture = gtk::GestureClick::new();
-    gesture.set_button(gtk::gdk::BUTTON_SECONDARY);
-
-    let popover_clone = popover.clone();
-    gesture.connect_pressed(move |gesture, _, x, y| {
-        let rect = gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 200);
-        popover_clone.set_pointing_to(Some(&rect));
-        popover_clone.popup();
-
-        gesture.set_state(gtk::EventSequenceState::Claimed);
-    });
-    window.add_controller(gesture);
 }
 
 fn setup_layer_shell(window: &ApplicationWindow) {

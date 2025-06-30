@@ -1,13 +1,20 @@
-use gtk::{Align, ApplicationWindow, Box as GtkBox, CenterBox, Label, Orientation, prelude::*};
+use gtk::{Align, ApplicationWindow, Box as GtkBox, CenterBox, Label, Orientation, PopoverMenu, prelude::*, EventSequenceState};
 
 use super::clock::ClockModule;
-use crate::{system::{global::_is_hyprland_session, system_info_modules::SystemInfoModule, updater::SystemUpdater}, ui::modules::{
-    hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
-    launcher::app_launcher::LauncherWidget,
-}};
+use crate::{
+    system::{
+        global::_is_hyprland_session, system_info_modules::SystemInfoModule, updater::SystemUpdater,
+    },
+    ui::modules::{
+        hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
+        launcher::app_launcher::LauncherWidget,
+    },
+};
 
-use std::rc::Rc;
 use crate::config::config_helper::get_config;
+use crate::ui::settings::settings::show_panel_settings;
+use gio::{Menu, SimpleActionGroup};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct PanelState {
@@ -58,6 +65,9 @@ impl PanelBuilder {
         main_box.set_hexpand(true);
         main_box.set_vexpand(true);
 
+        // Right click menu
+        setup_context_menu(&window, &main_box);
+
         // Left section
         let left_box = GtkBox::new(Orientation::Horizontal, 0);
         left_box.set_halign(Align::Start);
@@ -76,7 +86,7 @@ impl PanelBuilder {
                 left_box.append(widget.widget());
                 _workspace_widget = Some(widget);
             }
-            
+
             if config.modules.window_title {
                 let widget = Rc::new(WindowWidget::new());
                 left_box.append(widget.widget());
@@ -93,9 +103,17 @@ impl PanelBuilder {
         let _time_label = clock_module.create();
         center_box.append(&_time_label);
 
+
         // Right section
         let right_box = GtkBox::new(Orientation::Horizontal, 0);
         right_box.set_halign(Align::End);
+
+        // Only show menu when click on empty area of the bar
+        // else using this workaround to ignore right click on other boxes
+        // until i find a better way :)
+        add_gesture_blocker(&left_box);
+        add_gesture_blocker(&center_box);
+        add_gesture_blocker(&right_box);
 
         let system_info = SystemInfoModule::new();
         let (_cpu_label, _battery_label, _network_label, _volume_label) =
@@ -122,4 +140,44 @@ impl PanelBuilder {
             _volume_label,
         }
     }
+}
+
+fn add_gesture_blocker(widget: &GtkBox) {
+    let gesture = gtk::GestureClick::new();
+    gesture.set_button(gtk::gdk::BUTTON_SECONDARY);
+    gesture.connect_pressed(move| gesture, _,_,_|{
+       gesture.set_state(EventSequenceState::Claimed);
+    });
+    widget.add_controller(gesture);
+}
+
+fn setup_context_menu(window: &ApplicationWindow, main_box: &CenterBox) {
+    let menu = Menu::new();
+    menu.append(Some("Panel Settings"), Some("bar.settings"));
+
+    let popover = PopoverMenu::from_model(Some(&menu));
+    popover.set_parent(window);
+
+    let actions = SimpleActionGroup::new();
+
+    let settings_action = gio::SimpleAction::new("settings", None);
+    settings_action.connect_activate(move |_, _| {
+        show_panel_settings();
+    });
+
+    actions.add_action(&settings_action);
+    window.insert_action_group("bar", Some(&actions));
+
+    let gesture = gtk::GestureClick::new();
+    gesture.set_button(gtk::gdk::BUTTON_SECONDARY);
+
+    let popover_clone = popover.clone();
+    gesture.connect_pressed(move |gesture, _, x, y| {
+        let rect = gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 200);
+        popover_clone.set_pointing_to(Some(&rect));
+        popover_clone.popup();
+
+        gesture.set_state(gtk::EventSequenceState::Claimed);
+    });
+    main_box.add_controller(gesture);
 }

@@ -87,7 +87,6 @@ pub fn show_panel_settings() {
 
     settings_window.set_child(Some(&main_vbox));
 
-    let settings_window_clone = settings_window.clone();
     settings_window.connect_close_request(move |_| {
         LOG.debug("Settings window closed");
         SETTINGS_WINDOW_OPEN.store(false, Ordering::SeqCst);
