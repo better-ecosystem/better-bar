@@ -14,7 +14,7 @@ pub const APP_ID: &str = "com.better-ecosystem.bar";
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    // Show logs
+    /// Show debug logs
     #[clap(short, long, action = ArgAction::SetTrue)]
     debug: bool,
 }
