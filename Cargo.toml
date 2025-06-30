@@ -21,4 +21,4 @@ sysinfo = "0.35.2"
 lazy_static = "1.4"
 zbus = "5.7.1"
 zvariant = "5.5.3"
-clap = { version = "4.5.2", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive"] }

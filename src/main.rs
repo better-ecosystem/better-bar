@@ -17,9 +17,7 @@ struct Args {
     // Show logs
     #[clap(short, long, action = ArgAction::SetTrue)]
     debug: bool,
-    
 }
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,13 +27,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config_helper::init_config()?;
     log.debug("config initialized");
     let app = Application::builder().application_id(APP_ID).build();
-    
+
     app.connect_activate(|app| {
         create_main_bar(app);
     });
 
     log.debug("Running main app");
-    app.run();
     
+    let args: Vec<String> = Vec::new();
+    app.run_with_args(&args);
+
     Ok(())
 }
