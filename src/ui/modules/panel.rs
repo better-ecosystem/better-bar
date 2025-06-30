@@ -17,11 +17,11 @@ pub struct PanelState {
     pub _workspace_widget: Option<Rc<WorkspaceWidget>>,
     pub _window_title: Option<Rc<WindowWidget>>,
     pub _time_label: Label,
-    pub _cpu_label: Label, 
+    pub _cpu_label: Option<Label>,
     // pub _memory_label: Label,
-    pub _battery_label: Label,
-    pub _network_label: Label,
-    pub _volume_label: Label,
+    pub _battery_label: Option<Label>,
+    pub _network_label: Option<Label>,
+    pub _volume_label: Option<Label>,
 }
 
 impl PanelState {
@@ -61,7 +61,7 @@ impl PanelBuilder {
         // Left section
         let left_box = GtkBox::new(Orientation::Horizontal, 0);
         left_box.set_halign(Align::Start);
-        
+
         let _launcher = Rc::new(LauncherWidget::new());
         left_box.append(_launcher.widget());
 
@@ -69,10 +69,10 @@ impl PanelBuilder {
         let (_workspace_widget, _window_title) = if _is_hyprland_session() {
             let workspace_widget = Rc::new(WorkspaceWidget::new());
             let window_title = Rc::new(WindowWidget::new());
-            
+
             left_box.append(workspace_widget.widget());
             left_box.append(window_title.widget());
-            
+
             (Some(workspace_widget), Some(window_title))
         } else {
             (None, None)
@@ -92,13 +92,12 @@ impl PanelBuilder {
         right_box.set_halign(Align::End);
 
         let system_info = SystemInfoModule::new();
-        let (
-            _cpu_label,
-            // _memory_label,
-            _battery_label,
-            _network_label,
-            _volume_label,
-        ) = system_info.create(&right_box);
+        let (_cpu_label, _battery_label, _network_label, _volume_label) =
+            if let Some((cpu, battery, network, volume)) = system_info.create(&right_box) {
+                (Some(cpu), Some(battery), Some(network), Some(volume))
+            } else {
+                (None, None, None, None)
+            };
 
         main_box.set_start_widget(Some(&left_box));
         main_box.set_center_widget(Some(&center_box));

@@ -21,9 +21,14 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Args
     let args = Args::parse();
+    
+    // Logger
     Logger::set_logging_enabled(args.debug);
     let log = Logger::new("main", LogLevel::Debug);
+    
+    // Init config
     config_helper::init_config()?;
     log.debug("config initialized");
     let app = Application::builder().application_id(APP_ID).build();

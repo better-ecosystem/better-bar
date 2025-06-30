@@ -51,7 +51,7 @@ impl CpuMonitor {
     }
 
     fn parse_proc_stat() -> Result<CpuStats, String> {
-        LOG.debug("cpu -> Parsed /proc/stat");
+        LOG.debug("Parsed /proc/stat");
         
         let content = std::fs::read_to_string("/proc/stat")
         .map_err(|e| format!("Failed to read /proc/stat: {}", e))?;
@@ -68,7 +68,7 @@ impl CpuMonitor {
         let values = values.map_err(|e| format!("Failed to parse CPU values: {}", e))?;
         
         if values.len() < 4 {
-            LOG.debug("cpu -> Not enough CPU stats in /proc/stat");
+            LOG.debug("Not enough CPU stats in /proc/stat");
             return Err("Not enough CPU stats in /proc/stat".to_string());
         }
 
@@ -115,7 +115,7 @@ impl CpuMonitor {
     pub fn handle_error(&mut self, error: String) -> f64 {
         self.error_count += 1;
         eprintln!("CPU monitoring error #{}: {}", self.error_count, error);
-        LOG.error(&format!("cpu -> Cpu monitoring error {}", error));
+        LOG.error(&format!("Cpu monitoring error {}", error));
 
         if self.error_count > 5 { 0.0 } else { 50.0 }
     }

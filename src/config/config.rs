@@ -18,6 +18,9 @@ pub struct ModulesConfig {
     pub memory: bool,
     pub battery: bool,
     pub network: bool,
+    pub volume: bool,
+    pub window_title: bool,
+    pub workspaces: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -30,7 +33,7 @@ impl Config {
     pub fn default() -> Self {
         Self {
             panel: PanelConfig {
-                position: "top".to_string(),
+                position: "Top".to_string(),
                 height: 30,
             },
             modules: ModulesConfig {
@@ -39,6 +42,9 @@ impl Config {
                 memory: true,
                 battery: true,
                 network: true,
+                volume: true,
+                window_title: true,
+                workspaces: true,
             },
         }
     }

@@ -56,27 +56,27 @@ impl WorkspaceWidget {
             let tx_clone = tx.clone();
             event_listener.add_workspace_changed_handler(move |_| {
                 if let Err(e) = tx_clone.send(WorkspaceEvent::Changed) {
-                    LOG.error(&format!("workspaces -> Failed to send workspace change event: {}", e));
+                    LOG.error(&format!("Failed to send workspace change event: {}", e));
                 }
             });
             
             let tx_clone = tx.clone();
             event_listener.add_workspace_added_handler(move |_| {
                 if let Err(e) = tx_clone.send(WorkspaceEvent::Added) {
-                    LOG.error(&format!("workspaces -> Failed to send workspace added event: {}", e));
+                    LOG.error(&format!("Failed to send workspace added event: {}", e));
                 }
             });
 
             let tx_clone = tx.clone();
             event_listener.add_workspace_deleted_handler(move |_| {
                 if let Err(e) = tx_clone.send(WorkspaceEvent::Destroyed) {
-                    LOG.error(&format!("workspaces -> Failed to send workspace destroyed event: {}", e));
+                    LOG.error(&format!("Failed to send workspace destroyed event: {}", e));
                 }
             });
 
             // Start listening
             if let Err(e) = event_listener.start_listener() {
-                LOG.error(&format!("workspaces -> Failed to start event listener: {}", e));
+                LOG.error(&format!("Failed to start event listener: {}", e));
             }
         });
 
@@ -85,15 +85,15 @@ impl WorkspaceWidget {
                 match rx.try_recv() {
                     Ok(_) => {
                         widget_clone.update_workspaces();
-                        LOG.debug("workspaces ->  updated workspace");
+                        LOG.debug("workspaces updated workspace");
                     }
                     Err(mpsc::TryRecvError::Empty) => {
-                        LOG.debug("workspaces -> mpcs: Workspade event -> Empty");
+                        LOG.debug("mpcs: Workspade event -> Empty");
                         // No events, wait a bit
                         glib::timeout_future(std::time::Duration::from_millis(200)).await;
                     }
                     Err(mpsc::TryRecvError::Disconnected) => {
-                        LOG.error("workspaces -> mpcs: Workspade event ->  disconnected");
+                        LOG.error("mpcs: Workspade event ->  disconnected");
                         eprintln!("Event listener disconnected");
                         break;
                     }

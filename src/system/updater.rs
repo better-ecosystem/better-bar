@@ -1,18 +1,17 @@
 // Updates info of all modules
+use crate::config::config_helper::get_config;
 use crate::ui::{
     logger::{LogLevel, Logger},
     modules::{
-        battery::battery_updater::BatteryUpdater,
-        network::network_updater::NetworkUpdater,
-        panel::PanelState,
-        volume::volume::start_volume_monitor,
+        battery::battery_updater::BatteryUpdater, network::network_updater::NetworkUpdater,
+        panel::PanelState, volume::volume::start_volume_monitor,
     },
 };
 use gtk::{glib, prelude::*};
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOG: Logger = Logger::new("updater",LogLevel::Debug);
+    static ref LOG: Logger = Logger::new("updater", LogLevel::Debug);
 }
 
 pub struct SystemUpdater {
@@ -26,11 +25,17 @@ impl SystemUpdater {
 
     pub fn start(&self) {
         LOG.debug("Starting system updaters");
-        
+        let config = get_config().unwrap();
         self.start_clock_updates();
-        self.start_network_updates();
-        self.start_battery_updates();
-        self.start_volume_updates();
+        if config.modules.network {
+            self.start_network_updates();
+        }
+        if config.modules.battery {
+            self.start_battery_updates();
+        }
+        if config.modules.volume {
+            self.start_volume_updates();
+        }
     }
 
     fn start_clock_updates(&self) {
@@ -43,50 +48,58 @@ impl SystemUpdater {
     }
 
     fn start_battery_updates(&self) {
-        let label_clone = self.panel_state._battery_label.clone();
-        glib::spawn_future_local(async move {
-            BatteryUpdater::start(label_clone);
-        });
+        if let Some(ref battery_label) = self.panel_state._battery_label {
+            let label_clone = battery_label.clone();
+            glib::spawn_future_local(async move {
+                BatteryUpdater::start(label_clone);
+            });
+        } else {
+            LOG.debug("Battery module disabled, skipping battery updates");
+        }
     }
 
-    // Update network info 
+    // Update network info
     fn start_network_updates(&self) {
-        let label_clone = self.panel_state._network_label.clone();
-        
-        glib::spawn_future_local(async move {
-            NetworkUpdater::start(label_clone);
-        });
+        if let Some(ref network_label) = self.panel_state._network_label {
+            let label_clone = network_label.clone();
+            glib::spawn_future_local(async move {
+                NetworkUpdater::start(label_clone);
+            });
+        } else {
+            LOG.debug("Network module disabled, skipping network updates");
+        }
     }
-
 
     // For updating volume
     fn start_volume_updates(&self) {
-        LOG.debug("started volume update");
-        let volume_label = self.panel_state._volume_label.clone();
-        
-        glib::spawn_future_local(async move {
-            match std::panic::catch_unwind(|| start_volume_monitor()) {
-                Ok(mut volume_rx) => {
-                    LOG.debug("volume monitor started successfully");
-                    
-                    while volume_label.is_visible() {
-                        match volume_rx.recv().await {
-                            Some(volume) => {
-                                volume_label.set_text(&volume);
-                                LOG.debug("updated volume label");
-                            }
-                            None => {
-                                LOG.debug("volume monitor channel closed");
-                                break;
+        if let Some(ref volume_label) = self.panel_state._volume_label {
+            LOG.debug("started volume update");
+            let volume_label_clone = volume_label.clone();
+            glib::spawn_future_local(async move {
+                match std::panic::catch_unwind(|| start_volume_monitor()) {
+                    Ok(mut volume_rx) => {
+                        LOG.debug("volume monitor started successfully");
+                        while volume_label_clone.is_visible() {
+                            match volume_rx.recv().await {
+                                Some(volume) => {
+                                    volume_label_clone.set_text(&volume);
+                                    LOG.debug("updated volume label");
+                                }
+                                None => {
+                                    LOG.debug("volume monitor channel closed");
+                                    break;
+                                }
                             }
                         }
+                        LOG.debug("volume updater stopped");
                     }
-                    LOG.debug("volume updater stopped");
+                    Err(e) => {
+                        LOG.error(&format!("Failed to start volume monitor: {:?}", e));
+                    }
                 }
-                Err(e) => {
-                    LOG.error(&format!("Failed to start volume monitor: {:?}", e));
-                }
-            }
-        });
+            });
+        } else {
+            LOG.debug("Volume module disabled, skipping volume updates");
+        }
     }
 }

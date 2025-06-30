@@ -1,7 +1,6 @@
 use gtk::{gdk::Key, prelude::*,Box, Orientation, EventControllerKey, Label, Notebook};
 use lazy_static::lazy_static;
 use std::{env, process::Command};
-
 use crate::ui::{logger::{LogLevel, Logger}, settings::{config_page::{create_config_page}, modules_page::create_modules_page}};
 
 lazy_static! {
@@ -35,7 +34,7 @@ pub fn show_panel_settings() {
 
     // Close button
     let button_box = Box::new(Orientation::Horizontal, 12);
-    button_box.set_halign(gtk::Align::End);
+    button_box.set_halign(gtk::Align::Baseline);
     button_box.set_margin_top(20);
     button_box.set_margin_end(20);
     button_box.set_margin_bottom(20);
@@ -45,6 +44,7 @@ pub fn show_panel_settings() {
     close_button.connect_clicked(move |_| {
         window_clone.close();
     });
+    
     button_box.append(&close_button);
 
     // Main box
