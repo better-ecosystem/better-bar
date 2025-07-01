@@ -40,6 +40,7 @@ better-bar
 ### TODO
 
 - [ ] Add extra modules and quick settings.
+- [ ] Support sway workspaces
 
 ### In Progress
 
