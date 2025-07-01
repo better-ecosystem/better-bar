@@ -24,7 +24,8 @@ pub fn create_modules_page() -> Box {
     modules_page.set_margin_bottom(20);
     modules_page.set_margin_end(20);
     modules_page.set_margin_start(20);
-
+    modules_page.set_can_focus(false);
+    
     let modules_label = Label::new(Some("Panel Modules"));
     modules_label.add_css_class("heading");
     modules_page.append(&modules_label);
