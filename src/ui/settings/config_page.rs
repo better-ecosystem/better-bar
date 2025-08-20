@@ -54,11 +54,11 @@ pub fn create_config_page() -> Box {
     let position_dropdown = DropDown::from_strings(&position_options);
 
     let current_position = match config.panel.position.as_str() {
-        "Top" => 0,
-        "Bottom" => 1,
-        "Left" => 2,
-        "Right" => 3,
-        _ => 0, // Default to Top
+        "top" => 0,
+        "bottom" => 1,
+        "left" => 2,
+        "right" => 3,
+        _ => 0,
     };
     position_dropdown.set_selected(current_position);
 
@@ -71,15 +71,15 @@ pub fn create_config_page() -> Box {
         let mut config = config_ref.borrow_mut();
         let selected_index = drop_down.selected();
         let position = match selected_index {
-            0 => "Top",
-            1 => "Bottom",
-            2 => "Left",
-            3 => "Right",
-            _ => "Top", // Default fallback
+            0 => "top",
+            1 => "bottom",
+            2 => "left",
+            3 => "right",
+            _ => "top", // Default to top
         };
-        config.panel.position = position.to_string().to_lowercase();
+        config.panel.position = position.to_string();
         LOG.debug(&format!("Panel position set to: {}", config.panel.position));
     });
-    
+
     config_page
 }

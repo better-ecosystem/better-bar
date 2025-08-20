@@ -34,13 +34,23 @@ pub fn create_main_bar(app: &Application) {
 }
 
 fn setup_layer_shell(window: &ApplicationWindow) {
-    let config = get_config();
+    let config = get_config().unwrap();
+    let edge = string_to_edge(&config.panel.position);
 
     LayerShell::init_layer_shell(window);
     LayerShell::set_layer(window, Layer::Top);
-    LayerShell::set_anchor(window, gtk4_layer_shell::Edge::Top, true);
+    LayerShell::set_anchor(window, edge, true);
     LayerShell::set_anchor(window, gtk4_layer_shell::Edge::Left, true);
     LayerShell::set_anchor(window, gtk4_layer_shell::Edge::Right, true);
-    LayerShell::set_exclusive_zone(window, config.unwrap().panel.height as i32);
+    LayerShell::set_exclusive_zone(window, config.panel.height as i32);
     LayerShell::set_keyboard_mode(window, KeyboardMode::None);
 }
+fn string_to_edge(s: &str) -> gtk4_layer_shell::Edge {
+        match s.to_lowercase().as_str() {
+            "top" => gtk4_layer_shell::Edge::Top,
+            "bottom" => gtk4_layer_shell::Edge::Bottom,
+            "left" => gtk4_layer_shell::Edge::Left,
+            "right" => gtk4_layer_shell::Edge::Right,
+            _ => gtk4_layer_shell::Edge::Top,
+        }
+    }

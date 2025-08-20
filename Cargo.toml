@@ -2,6 +2,7 @@
 name = "better-bar"
 version = "0.1.1"
 edition = "2024"
+authors = ["sandesh2007"]
 
 [dependencies]
 toml = "0.8.23"
@@ -22,3 +23,5 @@ lazy_static = "1.4"
 zbus = "5.7.1"
 zvariant = "5.5.3"
 clap = { version = "4.5.40", features = ["derive"] }
+
+[package.metadata.bundle]
