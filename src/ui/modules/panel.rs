@@ -24,7 +24,7 @@ pub struct PanelState {
     pub _time_label: Label,
     pub _cpu_label: Option<Label>,
     // pub _memory_label: Label,
-    pub _battery_label: Option<Label>,
+    pub _battery_box: Option<GtkBox>,
     pub _network_label: Option<Label>,
     pub _volume_label: Option<Label>,
 }
@@ -116,7 +116,7 @@ impl PanelBuilder {
         add_gesture_blocker(&right_box);
 
         let system_info = SystemInfoModule::new();
-        let (_cpu_label, _battery_label, _network_label, _volume_label) =
+        let (_cpu_label, _battery_box, _network_label, _volume_label) =
             if let Some((cpu, battery, network, volume)) = system_info.create(&right_box) {
                 (Some(cpu), Some(battery), Some(network), Some(volume))
             } else {
@@ -135,7 +135,7 @@ impl PanelBuilder {
             _time_label,
             // _memory_label,
             _cpu_label,
-            _battery_label,
+            _battery_box,
             _network_label,
             _volume_label,
         }

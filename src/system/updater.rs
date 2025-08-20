@@ -48,10 +48,16 @@ impl SystemUpdater {
     }
 
     fn start_battery_updates(&self) {
-        if let Some(ref battery_label) = self.panel_state._battery_label {
-            let label_clone = battery_label.clone();
+        if let Some(ref battery_box) = self.panel_state._battery_box {
+
+            let label = gtk::Label::new(None);
+            let icon = gtk::Image::new();
+            battery_box.append(&icon);
+            battery_box.append(&label);
+            
+
             glib::spawn_future_local(async move {
-                BatteryUpdater::start(label_clone);
+                BatteryUpdater::start(label, icon);
             });
         } else {
             LOG.debug("Battery module disabled, skipping battery updates");
@@ -82,7 +88,7 @@ impl SystemUpdater {
                         while volume_label_clone.is_visible() {
                             match volume_rx.recv().await {
                                 Some(volume) => {
-                                    volume_label_clone.set_text(&volume);
+                                    volume_label_clone.set_text(&volume.percentage.to_string());
                                     LOG.debug("updated volume label");
                                 }
                                 None => {

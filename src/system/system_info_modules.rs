@@ -2,11 +2,12 @@
 // mainly this is right side modules
 
 use crate::config::config_helper;
+use crate::ui::modules::volume::volume::{volume_down, volume_up};
 use crate::ui::modules::{
     cpu::cpu_widget::create_cpu_widget,
     // memory::memory_widget::_create_memory_widget_percentage,
 };
-use gtk::{Box as GtkBox, Label, prelude::*};
+use gtk::{prelude::*, Box as GtkBox, EventControllerScroll, Label};
 
 pub struct SystemInfoModule;
 
@@ -20,7 +21,7 @@ impl SystemInfoModule {
         container: &GtkBox,
     ) -> Option<(
         Label,
-        Label,
+        GtkBox,
         Label,
         Label,
     )> {
@@ -38,11 +39,11 @@ impl SystemInfoModule {
             container.append(&cpu_label);
         }
 
-        let battery_label = Label::new(Some("󰂎 --"));
-        battery_label.set_widget_name("battery");
-        battery_label.add_css_class("modules");
+        let battery_box = GtkBox::new(gtk::Orientation::Horizontal, 2);
+        battery_box.set_widget_name("battery");
+        battery_box.add_css_class("modules");
         if config.modules.battery {
-            container.append(&battery_label);
+            container.append(&battery_box);
         }
 
         let network_label = Label::new(Some("󰖩 --"));
@@ -57,12 +58,30 @@ impl SystemInfoModule {
         volume_label.add_css_class("modules");
         if config.modules.volume {
             container.append(&volume_label);
+
+            // Add scroll behaviour on volume label
+            let scroll = EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);
+
+            scroll.connect_scroll(|_controller, _dx,dy | {
+                if dy > 0.0 {
+                    
+                    tokio::spawn(async { let _ = volume_down().await; });
+                }else if dy < 0.0{
+
+                    tokio::spawn(async { let _ = volume_up().await; });
+                }
+
+                true.into()
+            });
+
+            volume_label.add_controller(scroll);
+            
         }
 
         if config.modules.cpu || config.modules.battery || config.modules.network || config.modules.volume {
             Some((
                 cpu_label,
-                battery_label,
+                battery_box,
                 network_label,
                 volume_label,
             ))

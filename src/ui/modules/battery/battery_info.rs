@@ -1,7 +1,7 @@
 use zbus::{Connection, Proxy};
-use std::error::Error;
+use anyhow::Result;
 
-pub async fn get_battery_info() -> Result<String, Box<dyn Error>> {
+pub async fn get_battery_info() -> Result<i32> {
     // Connect to system bus
     let connection = Connection::system().await?;
 
@@ -18,7 +18,7 @@ pub async fn get_battery_info() -> Result<String, Box<dyn Error>> {
     let battery_path = devices
         .iter()
         .find(|p| p.as_str().contains("battery"))
-        .ok_or("No battery device found")?;
+        .ok_or_else(|| anyhow::anyhow!("No battery device found"))?;
 
     let battery = Proxy::new(
         &connection,
@@ -33,43 +33,6 @@ pub async fn get_battery_info() -> Result<String, Box<dyn Error>> {
     let state: u32 = battery.get_property("State").await?;
 
     let percentage_i32 = percentage.round() as i32;
-    let charging = state == 1;
 
-    let icon = get_battery_icon(percentage_i32, charging);
-    let info = format!("{} {}%", icon, percentage_i32);
-
-    Ok(info)
-}
-
-// Icons according to battery state and percentage 
-fn get_battery_icon(percentage: i32, charging: bool) -> &'static str {
-    if charging {
-        match percentage {
-            0..=10 => "󰢜",
-            11..=20 => "󰂆",
-            21..=30 => "󰂇",
-            31..=40 => "󰂈",
-            41..=50 => "󰢝",
-            51..=60 => "󰂉",
-            61..=70 => "󰢞",
-            71..=80 => "󰂊",
-            81..=90 => "󰂋",
-            91..=100 => "󰂅",
-            _ => "󰂄",
-        }
-    } else {
-        match percentage {
-            0..=10 => "󰂎",
-            11..=20 => "󰁻",
-            21..=30 => "󰁼",
-            31..=40 => "󰁽",
-            41..=50 => "󰁾",
-            51..=60 => "󰁿",
-            61..=70 => "󰂀",
-            71..=80 => "󰂁",
-            81..=90 => "󰂂",
-            91..=100 => "󰁹",
-            _ => "󰂃",
-        }
-    }
+    Ok(percentage_i32)
 }
