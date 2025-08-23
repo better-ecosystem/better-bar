@@ -4,7 +4,7 @@ use std::io::{BufRead, BufReader};
 
 use lazy_static::lazy_static;
 
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 
 lazy_static! {
     static ref LOG: Logger = Logger::new("memory",LogLevel::Debug);

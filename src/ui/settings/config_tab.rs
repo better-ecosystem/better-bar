@@ -1,5 +1,5 @@
 use crate::config::config_helper;
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 use gtk::{Box, DropDown, Label, Orientation, SpinButton, prelude::*};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -17,7 +17,7 @@ pub fn create_config_page() -> Box {
 
     // Get current configuration
     let config = match config_helper::get_config() {
-        Ok(cfg) => cfg,
+        Ok(cfg) => cfg.clone(),
         Err(e) => {
             LOG.error(&format!("Failed to load config: {}", e));
             return Box::new(Orientation::Vertical, 12); // Return empty box on error
@@ -39,12 +39,15 @@ pub fn create_config_page() -> Box {
     height_box.append(&height_spin);
     config_page.append(&height_box);
 
-    // Connect height spin
-    let config_ref = config_state.clone();
+    // Connect height
+    let local_config_clone = Rc::clone(&config_state);
     height_spin.connect_value_changed(move |spin_button| {
-        let mut config = config_ref.borrow_mut();
-        config.panel.height = spin_button.value() as u32;
-        LOG.debug(&format!("Panel height changed to: {}", config.panel.height));
+        let mut config_ref = local_config_clone.borrow_mut();
+        let new_height = spin_button.value() as u32;
+        if config_ref.panel.height != new_height {
+            config_ref.panel.height = new_height;
+            LOG.debug(&format!("Panel height updated locally: {}", new_height));
+        }
     });
 
     // Panel position
@@ -66,19 +69,22 @@ pub fn create_config_page() -> Box {
     position_box.append(&position_dropdown);
     config_page.append(&position_box);
 
-    let config_ref = config_state.clone();
+    let local_config_clone = Rc::clone(&config_state);
     position_dropdown.connect_selected_notify(move |drop_down| {
-        let mut config = config_ref.borrow_mut();
+        let mut config_ref = local_config_clone.borrow_mut();
         let selected_index = drop_down.selected();
-        let position = match selected_index {
+        let position_str = match selected_index {
             0 => "top",
             1 => "bottom",
             2 => "left",
             3 => "right",
-            _ => "top", // Default to top
+            _ => "top",
         };
-        config.panel.position = position.to_string();
-        LOG.debug(&format!("Panel position set to: {}", config.panel.position));
+
+        if config_ref.panel.position != position_str {
+            LOG.debug(&format!("Panel position updated locally: {}", position_str));
+            config_ref.panel.position = position_str.to_string();
+        }
     });
 
     config_page

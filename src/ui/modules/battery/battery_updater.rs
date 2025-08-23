@@ -1,5 +1,5 @@
 use super::battery_info::get_battery_info;
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 use gtk::{glib, prelude::*};
 use lazy_static::lazy_static;
 

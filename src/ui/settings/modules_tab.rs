@@ -4,7 +4,7 @@ use std::cell::RefCell;
 
 use crate::config::config_helper;
 use lazy_static::lazy_static;
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 
 lazy_static! {
     static ref LOG: Logger = Logger::new("modules", LogLevel::Debug);

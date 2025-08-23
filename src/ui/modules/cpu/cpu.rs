@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use lazy_static::lazy_static;
 
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 
 lazy_static! {
     static ref LOG: Logger = Logger::new("cpu",LogLevel::Debug);

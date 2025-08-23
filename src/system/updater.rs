@@ -1,12 +1,13 @@
 // Updates info of all modules
 use crate::config::config_helper::get_config;
 use crate::ui::{
-    logger::{LogLevel, Logger},
     modules::{
         battery::battery_updater::BatteryUpdater, network::network_updater::NetworkUpdater,
         panel::PanelState, volume::volume::start_volume_monitor,
     },
 };
+
+use crate::utils::logger::{LogLevel, Logger};
 use gtk::{glib, prelude::*};
 use lazy_static::lazy_static;
 

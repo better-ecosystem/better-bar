@@ -1,6 +1,6 @@
 use gtk::{glib, prelude::WidgetExt, Label};
 use lazy_static::lazy_static;
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 use super::network_info::get_network_info;
 
 lazy_static! {

@@ -56,7 +56,6 @@ better-bar
 
 - [ ] Add settings for the bar.
 
-
 ### Done
 
 - [x] Workspace indicator (Hyprland)

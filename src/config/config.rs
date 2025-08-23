@@ -32,7 +32,7 @@ impl Config {
     pub fn default() -> Self {
         Self {
             panel: PanelConfig {
-                position: "top".to_string(),
+                position: "bottom".to_string(),
                 height: 30,
             },
             modules: ModulesConfig {

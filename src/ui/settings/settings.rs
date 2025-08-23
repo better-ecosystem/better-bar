@@ -1,8 +1,6 @@
 use crate::config::config_helper;
-use crate::ui::{
-    logger::{LogLevel, Logger},
-    settings::{config_page::create_config_page, modules_page::create_modules_page},
-};
+use crate::ui::settings::{config_tab::create_config_page, modules_tab::create_modules_page};
+use crate::utils::logger::{LogLevel, Logger};
 use gtk::{Box, EventControllerKey, Label, Notebook, Orientation, gdk::Key, prelude::*};
 use lazy_static::lazy_static;
 use std::env;
@@ -54,18 +52,10 @@ pub fn show_panel_settings() {
     button_box.set_margin_bottom(20);
 
     let apply_button = gtk::Button::with_label("Apply");
-    apply_button.connect_clicked(move |_| {
-        if let Ok(config) = config_helper::get_config() {
-            match config.save() {
-                Ok(_) => {
-                    LOG.debug("Configuration applied successfully");
-                    LOG.debug("Settings applied, manual panel restart may be required");
-                }
-                Err(e) => {
-                    LOG.error(&format!("Failed to save config: {}", e));
-                }
-            }
-        }
+
+    apply_button.connect_clicked(move |_| match config_helper::save_config() {
+        Ok(_) => LOG.debug("Configuration applied successfully"),
+        Err(e) => LOG.error(&format!("Failed to save config: {}", e)),
     });
 
     // Add Close button

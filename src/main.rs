@@ -5,8 +5,10 @@ use clap::{Parser, ArgAction};
 mod ui;
 mod system;
 mod config;
+mod utils;
+
 use ui::bar::create_main_bar;
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 use crate::config::config_helper;
 
 pub const APP_ID: &str = "com.better-ecosystem.bar";

@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::sync::mpsc;
 use std::thread;
 
-use crate::ui::logger::{LogLevel, Logger};
+use crate::utils::logger::{LogLevel, Logger};
 use lazy_static::lazy_static;
 
 lazy_static! {
