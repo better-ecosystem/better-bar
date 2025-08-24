@@ -21,7 +21,6 @@ impl SystemInfoModule {
         container: &GtkBox,
     ) -> Option<(
         Label,
-        GtkBox,
         Label,
         Label,
     )> {
@@ -37,13 +36,6 @@ impl SystemInfoModule {
         cpu_label.add_css_class("modules");
         if config.modules.cpu {
             container.append(&cpu_label);
-        }
-
-        let battery_box = GtkBox::new(gtk::Orientation::Horizontal, 2);
-        battery_box.set_widget_name("battery");
-        battery_box.add_css_class("modules");
-        if config.modules.battery {
-            container.append(&battery_box);
         }
 
         let network_label = Label::new(Some("󰖩 --"));
@@ -78,10 +70,9 @@ impl SystemInfoModule {
             
         }
 
-        if config.modules.cpu || config.modules.battery || config.modules.network || config.modules.volume {
+        if config.modules.cpu || config.modules.network || config.modules.volume {
             Some((
                 cpu_label,
-                battery_box,
                 network_label,
                 volume_label,
             ))

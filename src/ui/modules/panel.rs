@@ -1,14 +1,17 @@
-use gtk::{Align, ApplicationWindow, Box as GtkBox, CenterBox, Label, Orientation, PopoverMenu, prelude::*, EventSequenceState};
+use gtk::{
+    Align, ApplicationWindow, Box as GtkBox, CenterBox, EventSequenceState, Label, Orientation,
+    PopoverMenu, prelude::*,
+};
 
 use super::clock::ClockModule;
 use crate::{
-    system::{
+    config::config::Config, system::{
         global::_is_hyprland_session, system_info_modules::SystemInfoModule, updater::SystemUpdater,
-    },
-    ui::modules::{
+    }, ui::modules::{
+        battery::battery::Battery,
         hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
         launcher::app_launcher::LauncherWidget,
-    },
+    }
 };
 
 use crate::config::config_helper::get_config;
@@ -24,7 +27,6 @@ pub struct PanelState {
     pub _time_label: Label,
     pub _cpu_label: Option<Label>,
     // pub _memory_label: Label,
-    pub _battery_box: Option<GtkBox>,
     pub _network_label: Option<Label>,
     pub _volume_label: Option<Label>,
 }
@@ -103,7 +105,6 @@ impl PanelBuilder {
         let _time_label = clock_module.create();
         center_box.append(&_time_label);
 
-
         // Right section
         let right_box = GtkBox::new(Orientation::Horizontal, 0);
         right_box.set_halign(Align::End);
@@ -116,12 +117,17 @@ impl PanelBuilder {
         add_gesture_blocker(&right_box);
 
         let system_info = SystemInfoModule::new();
-        let (_cpu_label, _battery_box, _network_label, _volume_label) =
-            if let Some((cpu, battery, network, volume)) = system_info.create(&right_box) {
-                (Some(cpu), Some(battery), Some(network), Some(volume))
+        let (_cpu_label, _network_label, _volume_label) =
+            if let Some((cpu, network, volume)) = system_info.create(&right_box) {
+                (Some(cpu), Some(network), Some(volume))
             } else {
-                (None, None, None, None)
+                (None, None, None)
             };
+
+        let battery_config = Config::load().unwrap().battery;
+        let battery = Battery::new(battery_config.clone());
+        right_box.append(battery.widget());
+        battery.start_updates();
 
         main_box.set_start_widget(Some(&left_box));
         main_box.set_center_widget(Some(&center_box));
@@ -135,7 +141,6 @@ impl PanelBuilder {
             _time_label,
             // _memory_label,
             _cpu_label,
-            _battery_box,
             _network_label,
             _volume_label,
         }
@@ -145,8 +150,8 @@ impl PanelBuilder {
 fn add_gesture_blocker(widget: &GtkBox) {
     let gesture = gtk::GestureClick::new();
     gesture.set_button(gtk::gdk::BUTTON_SECONDARY);
-    gesture.connect_pressed(move| gesture, _,_,_|{
-       gesture.set_state(EventSequenceState::Claimed);
+    gesture.connect_pressed(move |gesture, _, _, _| {
+        gesture.set_state(EventSequenceState::Claimed);
     });
     widget.add_controller(gesture);
 }

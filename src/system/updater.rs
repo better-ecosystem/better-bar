@@ -2,7 +2,7 @@
 use crate::config::config_helper::get_config;
 use crate::ui::{
     modules::{
-        battery::battery_updater::BatteryUpdater, network::network_updater::NetworkUpdater,
+        network::network_updater::NetworkUpdater,
         panel::PanelState, volume::volume::start_volume_monitor,
     },
 };
@@ -31,9 +31,9 @@ impl SystemUpdater {
         if config.modules.network {
             self.start_network_updates();
         }
-        if config.modules.battery {
-            self.start_battery_updates();
-        }
+        // if config.modules.battery {
+            // 
+        // }
         if config.modules.volume {
             self.start_volume_updates();
         }
@@ -46,23 +46,6 @@ impl SystemUpdater {
             time_label.set_text(&now.format("%I:%M").to_string());
             glib::ControlFlow::Continue
         });
-    }
-
-    fn start_battery_updates(&self) {
-        if let Some(ref battery_box) = self.panel_state._battery_box {
-
-            let label = gtk::Label::new(None);
-            let icon = gtk::Image::new();
-            battery_box.append(&icon);
-            battery_box.append(&label);
-            
-
-            glib::spawn_future_local(async move {
-                BatteryUpdater::start(label, icon);
-            });
-        } else {
-            LOG.debug("Battery module disabled, skipping battery updates");
-        }
     }
 
     // Update network info

@@ -1,8 +1,7 @@
-
 use serde::{Deserialize, Serialize};
-use std::{env, fs};
 use std::io::Write;
-use std::path::{PathBuf};
+use std::path::PathBuf;
+use std::{env, fs};
 use toml;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -22,10 +21,19 @@ pub struct ModulesConfig {
     pub workspaces: bool,
 }
 
+// For battery widget config
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct BatteryConfig {
+    pub tooltip: bool,
+    pub format: String,         // eg: "{icon} {state} {percentage}"
+    pub tooltip_format: String, // eg: Full in {time} min, if charging
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     pub panel: PanelConfig,
     pub modules: ModulesConfig,
+    pub battery: BatteryConfig,
 }
 
 impl Config {
@@ -44,13 +52,20 @@ impl Config {
                 window_title: true,
                 workspaces: true,
             },
+            battery: BatteryConfig {
+                tooltip: true,
+                format: "{icon} {percentage}".to_string(),
+                tooltip_format: "{time}".to_string(),
+            },
         }
     }
 
     pub fn get_config_path() -> PathBuf {
-        let home = env::var("HOME")
-            .expect("Could not find home directory");
-        PathBuf::from(home).join(".config").join("better-bar").join("config.toml")
+        let home = env::var("HOME").expect("Could not find home directory");
+        PathBuf::from(home)
+            .join(".config")
+            .join("better-bar")
+            .join("config.toml")
     }
 
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
