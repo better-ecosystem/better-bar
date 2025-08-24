@@ -54,6 +54,7 @@ better-bar
 
 ### In Progress
 
+- [ ] Recator and organize widgets
 - [ ] Add settings for the bar.
 
 ### Done
