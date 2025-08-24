@@ -53,7 +53,7 @@ pub async fn get_network_info() -> Result<String, Box<dyn Error>> {
                         let strength: u8 = ap.get_property("Strength").await.unwrap_or(0);
                         let icon = get_wifi_icon(strength);
 
-                        return Ok(format!("{} {}", icon, ssid));
+                        return Ok(format!("{} {} {}%", icon, ssid, strength));
                     }
                 }
                 "802-3-ethernet" => {

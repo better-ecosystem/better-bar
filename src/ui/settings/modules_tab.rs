@@ -1,163 +1,181 @@
-use gtk::{prelude::*, Box, Label, Orientation, Switch};
-use std::rc::Rc;
-use std::cell::RefCell;
-
 use crate::config::config_helper;
-use lazy_static::lazy_static;
 use crate::utils::logger::{LogLevel, Logger};
+use gtk::{
+    prelude::*,
+    Align, Box, Label, ListBox, ListBoxRow, Orientation, Separator, Switch,
+};
+use lazy_static::lazy_static;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 lazy_static! {
     static ref LOG: Logger = Logger::new("modules", LogLevel::Debug);
 }
 
+/// Public entry: returns a composed, styled page
 pub fn create_modules_page() -> Box {
+
+    // Load config file
     let config = match config_helper::get_config() {
         Ok(cfg) => cfg,
         Err(e) => {
             LOG.error(&format!("Failed to load config: {}", e));
-            return Box::new(Orientation::Vertical, 12); // Return empty box on error
+            return Box::new(Orientation::Vertical, 12);
         }
     };
-
-    let modules_page = Box::new(Orientation::Vertical, 12);
-    modules_page.set_margin_top(20);
-    modules_page.set_margin_bottom(20);
-    modules_page.set_margin_end(20);
-    modules_page.set_margin_start(20);
-    modules_page.set_can_focus(false);
-    
-    let modules_label = Label::new(Some("Panel Modules"));
-    modules_label.add_css_class("heading");
-    modules_page.append(&modules_label);
-
-    // Create a shared config state to be updated by all switches
     let config_state = Rc::new(RefCell::new(config.clone()));
 
-    // CPU module
-    let cpu_box = Box::new(Orientation::Horizontal, 12);
-    let cpu_label = Label::new(Some("Show CPU usage:"));
-    let cpu_switch = Switch::new();
-    cpu_switch.set_active(config.modules.cpu);
-    cpu_box.append(&cpu_label);
-    cpu_box.append(&cpu_switch);
-    modules_page.append(&cpu_box);
+    let page = Box::new(Orientation::Vertical, 16);
+    page.set_margin_top(20);
+    page.set_margin_bottom(20);
+    page.set_margin_start(20);
+    page.set_margin_end(20);
 
-    // Connect CPU switch
-    let config_ref = config_state.clone();
-    cpu_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.cpu = state;
-        LOG.debug(&format!("CPU module set to: {}", state));
+    page.append(&section_title("Panel Modules"));
+
+    let card = card_container();
+    let list = ListBox::new();
+    list.add_css_class("boxed-list");
+
+    // CPU
+    {
+        let row = switch_row("CPU Usage", config.modules.cpu);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.cpu = state;
+            LOG.debug(&format!("CPU module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    // Memory
+    {
+        let row = switch_row("Memory Usage", config.modules.memory);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.memory = state;
+            LOG.debug(&format!("Memory module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    // Window Title, only on hyprland for now
+    {
+        let row = switch_row("Window Title", config.modules.window_title);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.window_title = state;
+            LOG.debug(&format!("Window title module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    // Workspaces, only on hyprland for now
+    {
+        let row = switch_row("Workspaces", config.modules.workspaces);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.workspaces = state;
+            LOG.debug(&format!("Workspaces module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    // Battery
+    {
+        let row = switch_row("Battery Info", config.modules.battery);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.battery = state;
+            LOG.debug(&format!("Battery module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    // Network
+    {
+        let row = switch_row("Network Info", config.modules.network);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.network = state;
+            LOG.debug(&format!("Network module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    // Volume
+    {
+        let row = switch_row("Volume", config.modules.volume);
+        let cfg = Rc::clone(&config_state);
+        attach_switch_handler(&row, move |state| {
+            let mut c = cfg.borrow_mut();
+            c.modules.volume = state;
+            LOG.debug(&format!("Volume module set to: {}", state));
+        });
+        list.append(&row);
+    }
+
+    card.append(&list);
+    page.append(&card);
+
+    page.append(&Separator::new(Orientation::Horizontal));
+    page
+}
+
+fn section_title(text: &str) -> Label {
+    let lbl = Label::new(Some(text));
+    lbl.add_css_class("section-title");
+    lbl.set_xalign(0.0);
+    lbl
+}
+
+fn card_container() -> Box {
+    let card = Box::new(Orientation::Vertical, 12);
+    card.add_css_class("settings-card");
+    card.set_margin_top(8);
+    card
+}
+
+/// Create a row with a right-aligned toggle switch
+fn switch_row(label_text: &str, initial: bool) -> ListBoxRow {
+    let row = ListBoxRow::new();
+
+    let h = Box::new(Orientation::Horizontal, 12);
+    h.set_margin_top(8);
+    h.set_margin_bottom(8);
+    h.set_margin_start(12);
+    h.set_margin_end(12);
+
+    let label = Label::new(Some(label_text));
+    label.set_xalign(0.0);
+    label.set_halign(Align::Start);
+    label.set_hexpand(true);
+
+    let sw = Switch::new();
+    sw.set_active(initial);
+    sw.set_halign(Align::End);
+
+    h.append(&label);
+    h.append(&sw);
+    row.set_child(Some(&h));
+    row
+}
+
+fn attach_switch_handler<F: 'static + Fn(bool)>(row: &ListBoxRow, f: F) {
+    let h: Box = row
+        .child()
+        .and_then(|c| c.downcast::<Box>().ok())
+        .expect("row child must be a Box");
+
+    let sw: Switch = h.last_child().unwrap().downcast().unwrap();
+    sw.connect_state_set(move |_s, state| {
+        f(state);
         glib::Propagation::Proceed
     });
-
-    // Memory module
-    let memory_box = Box::new(Orientation::Horizontal, 12);
-    let memory_label = Label::new(Some("Show Memory usage:"));
-    let memory_switch = Switch::new();
-    memory_switch.set_active(config.modules.memory);
-    memory_box.append(&memory_label);
-    memory_box.append(&memory_switch);
-    modules_page.append(&memory_box);
-
-    // Connect Memory switch
-    let config_ref = config_state.clone();
-    memory_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.memory = state;
-        LOG.debug(&format!("Memory module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-
-    // Window title module
-    let window_title_box = Box::new(Orientation::Horizontal, 12);
-    let window_title_label = Label::new(Some("Show window title:"));
-    let window_title_switch = Switch::new();
-    window_title_switch.set_active(config.modules.window_title);
-    window_title_box.append(&window_title_label);
-    window_title_box.append(&window_title_switch);
-    modules_page.append(&window_title_box);
-
-    // Connect window title switch
-    let config_ref = config_state.clone();
-    window_title_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.window_title = state;
-        LOG.debug(&format!("Window title module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-
-    // Workspace module
-    let workspace_box = Box::new(Orientation::Horizontal, 12);
-    let workspace_label = Label::new(Some("Workspaces:"));
-    let workspace_switch = Switch::new();
-    workspace_switch.set_active(config.modules.workspaces);
-    workspace_box.append(&workspace_label);
-    workspace_box.append(&workspace_switch);
-    modules_page.append(&workspace_box);
-
-    // Connect workspace switch
-    let config_ref = config_state.clone();
-    workspace_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.workspaces = state;
-        LOG.debug(&format!("Workspaces module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-
-    // Battery module
-    let battery_box = Box::new(Orientation::Horizontal, 12);
-    let battery_label = Label::new(Some("Battery Info:"));
-    let battery_switch = Switch::new();
-    battery_switch.set_active(config.modules.battery);
-    battery_box.append(&battery_label);
-    battery_box.append(&battery_switch);
-    modules_page.append(&battery_box);
-
-    // Connect battery switch
-    let config_ref = config_state.clone();
-    battery_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.battery = state;
-        LOG.debug(&format!("Battery module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-
-    // Network module
-    let network_box = Box::new(Orientation::Horizontal, 12);
-    let network_label = Label::new(Some("Network Info:"));
-    let network_switch = Switch::new();
-    network_switch.set_active(config.modules.network);
-    network_box.append(&network_label);
-    network_box.append(&network_switch);
-    modules_page.append(&network_box);
-
-    // Connect network switch
-    let config_ref = config_state.clone();
-    network_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.network = state;
-        LOG.debug(&format!("Network module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-
-    // Volume module
-    let volume_box = Box::new(Orientation::Horizontal, 12);
-    let volume_label = Label::new(Some("Volume Info:"));
-    let volume_switch = Switch::new();
-    volume_switch.set_active(config.modules.volume);
-    volume_box.append(&volume_label);
-    volume_box.append(&volume_switch);
-    modules_page.append(&volume_box);
-
-    // Connect volume switch
-    let config_ref = config_state.clone();
-    volume_switch.connect_state_set(move |_, state| {
-        let mut config = config_ref.borrow_mut();
-        config.modules.volume = state;
-        LOG.debug(&format!("Volume module set to: {}", state));
-        glib::Propagation::Proceed
-    });
-    
-    modules_page
 }

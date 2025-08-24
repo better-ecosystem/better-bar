@@ -34,7 +34,17 @@ pub fn get_config_mut() -> Result<impl std::ops::DerefMut<Target = Config>, Box<
 
 /// Save the current config
 pub fn save_config() -> Result<(), Box<dyn std::error::Error>> {
-    let config = get_config()?;
-    config.save()?;
+    match get_config_mut() {
+        Ok(config) => {
+            if let Err(e) = config.save() {
+                eprintln!("Failed to save config: {e}");
+                return Err(e);
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to lock config: {e}");
+            return Err(e);
+        }
+    }
     Ok(())
 }
