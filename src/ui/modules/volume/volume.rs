@@ -1,231 +1,151 @@
-use tokio::io::AsyncBufReadExt;
-use tokio::process::Command;
-use std::error::Error;
-use std::fmt;
+use crate::{
+    config::config::VolumeConfig,
+    ui::modules::volume::{
+        monitor::start_volume_monitor,
+        volume_helper::{change_volume, toggle_mute},
+        volume_info::VolumeInfo,
+    },
+};
+use gtk::{
+    Box, Image, Label,
+    prelude::{BoxExt, GestureSingleExt, WidgetExt},
+};
+use std::sync::{Arc, Mutex};
+use tokio::time::{Duration, sleep};
 
-#[derive(Debug)]
-pub enum VolumeError {
-    CommandFailed(String),
-    ParseError(String),
-    IoError(std::io::Error),
+pub struct Volume {
+    widget: Box,
+    label: Label,
+    icon: Image,
+    config: VolumeConfig,
 }
 
-impl fmt::Display for VolumeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            VolumeError::CommandFailed(msg) => write!(f, "Command failed: {}", msg),
-            VolumeError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            VolumeError::IoError(err) => write!(f, "IO error: {}", err),
-        }
-    }
-}
+impl Volume {
+    pub fn new(config: VolumeConfig) -> Self {
+        let container = Box::new(gtk::Orientation::Horizontal, 4);
+        container.add_css_class("modules");
 
-impl Error for VolumeError {}
+        let icon = Image::new();
+        let label = Label::new(None);
 
-impl From<std::io::Error> for VolumeError {
-    fn from(err: std::io::Error) -> Self {
-        VolumeError::IoError(err)
-    }
-}
+        container.append(&icon);
+        container.append(&label);
 
-#[derive(Debug, Clone)]
-pub struct VolumeInfo {
-    pub percentage: u8,
-    pub is_muted: bool,
-}
+        let gesture = gtk::GestureClick::new();
+        gesture.set_button(gtk::gdk::BUTTON_PRIMARY);
+        gesture.connect_pressed(move |_, _, _, _| {
+            let _ = tokio::spawn(async move {
+                if let Err(e) = toggle_mute().await {
+                    eprintln!("Failed to toggle mute: {:?}", e);
+                }
+            });
+        });
 
-impl fmt::Display for VolumeInfo {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.is_muted {
-            write!(f, "audio-volume-muted")
-        } else {
-            let icon = match self.percentage {
-                0 => "audio-volume-muted",
-                1..=33 => "audio-volume-low",
-                34..=66 => "audio-volume-medium",
-                _ => "audio-volume-high",
-            };
-            write!(f, "{} {}%", icon, self.percentage)
-        }
-    }
-}
+        container.add_controller(gesture);
 
-/// Listen to pactl events and monitor volume changes
-pub fn start_volume_monitor() -> tokio::sync::mpsc::Receiver<VolumeInfo> {
-    let (tx, rx) = tokio::sync::mpsc::channel(100);
-    
-    tokio::spawn(async move {
-        // Send initial volume
-        if let Ok(initial_volume) = get_current_volume().await {
-            let _ = tx.send(initial_volume).await;
-        }
+        let pending_delta = Arc::new(Mutex::new(0i8));
+        let pending_delta_clone = pending_delta.clone();
 
-        // Start monitoring
-        if let Err(e) = monitor_volume_changes(tx).await {
-            eprintln!("Volume monitor error: {}", e);
-        }
-    });
-    
-    rx
-}
+        let scroll = gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);
+        scroll.connect_scroll(move |_ctrl, _dx, dy| {
+            let mut delta = pending_delta.lock().unwrap();
+            if dy < 0.0 {
+                *delta += 1;
+            } else if dy > 0.0 {
+                *delta -= 1;
+            }
+            true.into()
+        });
 
-async fn monitor_volume_changes(tx: tokio::sync::mpsc::Sender<VolumeInfo>) -> Result<(), VolumeError> {
-    let mut child = Command::new("pactl")
-        .args(&["subscribe"])
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .spawn()?;
+        container.add_controller(scroll);
 
-    let stdout = child.stdout.take()
-        .ok_or_else(|| VolumeError::CommandFailed("Failed to get stdout".to_string()))?;
-    
-    let reader = tokio::io::BufReader::new(stdout);
-    let mut lines = reader.lines();
-    
-    while let Some(line) = lines.next_line().await? {
-
-        // Check for sink volume/mute changes
-        if line.contains("sink") && (line.contains("change") || line.contains("new")) {
-            if let Ok(volume) = get_current_volume().await {
-                if tx.send(volume).await.is_err() {
-                    break;
+        tokio::spawn(async move {
+            loop {
+                sleep(Duration::from_millis(50)).await;
+                let mut delta = pending_delta_clone.lock().unwrap();
+                if *delta != 0 {
+                    let amount = *delta;
+                    *delta = 0;
+                    tokio::spawn(async move {
+                        let _ = change_volume(amount).await;
+                    });
                 }
             }
+        });
+
+        Self {
+            widget: container,
+            label,
+            icon,
+            config,
         }
     }
-    
-    Ok(())
-}
 
-/// Get current volume and mute status
-pub async fn get_current_volume() -> Result<VolumeInfo, VolumeError> {
-    // Get volume and mute status concurrently
-    let (volume_result, mute_result) = tokio::join!(
-        get_volume_percentage(),
-        is_muted()
-    );
-    
-    let percentage = volume_result?;
-    let is_muted = mute_result?;
-    
-    Ok(VolumeInfo { percentage, is_muted })
-}
-
-async fn get_volume_percentage() -> Result<u8, VolumeError> {
-    let output = Command::new("pactl")
-        .args(&["get-sink-volume", "@DEFAULT_SINK@"])
-        .output()
-        .await?;
-    
-    if !output.status.success() {
-        return Err(VolumeError::CommandFailed("Failed to get volume".to_string()));
+    pub fn widget(&self) -> &Box {
+        &self.widget
     }
-    
-    let volume_output = String::from_utf8(output.stdout)
-        .map_err(|e| VolumeError::ParseError(format!("Invalid UTF-8: {}", e)))?;
-    
-    parse_volume_from_output(&volume_output)
-}
 
-async fn is_muted() -> Result<bool, VolumeError> {
-    let output = Command::new("pactl")
-        .args(&["get-sink-mute", "@DEFAULT_SINK@"])
-        .output()
-        .await?;
-    
-    if !output.status.success() {
-        return Err(VolumeError::CommandFailed("Failed to get mute status".to_string()));
+    pub fn start_updates(self) {
+        let label = self.label.clone();
+        let icon = self.icon.clone();
+        let widget = self.widget.clone();
+        let config = self.config.clone();
+
+        // Spawn async task for live updates
+        glib::spawn_future_local(async move {
+            match std::panic::catch_unwind(|| start_volume_monitor()) {
+                Ok(mut rx) => {
+                    while widget.is_visible() {
+                        match rx.recv().await {
+                            Some(volume) => update_widget(&config, &widget, &label, &icon, &volume),
+
+                            None => break,
+                        }
+                    }
+                }
+                Err(e) => eprintln!("Failed to start volume monitor: {:?}", e),
+            }
+        });
     }
-    
-    let mute_output = String::from_utf8(output.stdout)
-        .map_err(|e| VolumeError::ParseError(format!("Invalid UTF-8: {}", e)))?;
-    
-    Ok(mute_output.trim().ends_with("yes"))
 }
 
-fn parse_volume_from_output(output: &str) -> Result<u8, VolumeError> {
-    // Look for percentage pattern like "50%"
-    for word in output.split_whitespace() {
-        if let Some(percent_pos) = word.find('%') {
-            let volume_str = &word[..percent_pos];
-            return volume_str.parse::<u8>()
-                .map_err(|_| VolumeError::ParseError(format!("Invalid volume: {}", volume_str)));
-        }
+/// Updates volume in ui
+fn update_widget(
+    config: &VolumeConfig,
+    widget: &Box,
+    label: &Label,
+    icon: &Image,
+    volume: &VolumeInfo,
+) {
+    label.set_text(&format!("{}%", volume.percentage));
+
+    let icon_name = if volume.is_muted {
+        "audio-volume-muted-symbolic"
+    } else if volume.percentage > 70 {
+        "audio-volume-high-symbolic"
+    } else if volume.percentage > 30 {
+        "audio-volume-medium-symbolic"
+    } else if volume.percentage > 0 {
+        "audio-volume-low-symbolic"
+    } else {
+        "audio-volume-muted-symbolic"
+    };
+
+    icon.set_icon_name(Some(icon_name));
+
+    if config.tooltip {
+        let mut tooltip = config.tooltip_format.clone();
+
+        let muted_text = if volume.is_muted {
+            "muted".to_string()
+        } else {
+            format!("{}%", volume.percentage)
+        };
+
+        tooltip = tooltip.replace("{percentage}", &format!("{}", volume.percentage));
+        tooltip = tooltip.replace("{state}", &muted_text);
+        tooltip = tooltip.replace("{icon}", "");
+
+        widget.set_tooltip_text(Some(&tooltip));
     }
-    
-    Err(VolumeError::ParseError("No volume percentage found".to_string()))
-}
-
-/// Increase volume by specified amount (1-100)
-pub async fn increase_volume(amount: u8) -> Result<(), VolumeError> {
-    let amount = amount.min(100); // Cap at 100
-    
-    let output = Command::new("pactl")
-        .args(&["set-sink-volume", "@DEFAULT_SINK@", &format!("+{}%", amount)])
-        .output()
-        .await?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(VolumeError::CommandFailed(format!("Failed to increase volume: {}", stderr)));
-    }
-    
-    Ok(())
-}
-
-/// Decrease volume by specified amount
-pub async fn decrease_volume(amount: u8) -> Result<(), VolumeError> {
-    let amount = amount.min(100);
-    
-    let output = Command::new("pactl")
-        .args(&["set-sink-volume", "@DEFAULT_SINK@", &format!("-{}%", amount)])
-        .output()
-        .await?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(VolumeError::CommandFailed(format!("Failed to decrease volume: {}", stderr)));
-    }
-    
-    Ok(())
-}
-
-/// Set absolute volume
-pub async fn set_volume(percentage: u8) -> Result<(), VolumeError> {
-    let percentage = percentage.min(100); // well.. may be over-amplification ??
-    
-    let output = Command::new("pactl")
-        .args(&["set-sink-volume", "@DEFAULT_SINK@", &format!("{}%", percentage)])
-        .output()
-        .await?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(VolumeError::CommandFailed(format!("Failed to set volume: {}", stderr)));
-    }
-    
-    Ok(())
-}
-
-/// Toggle mute status
-pub async fn toggle_mute() -> Result<(), VolumeError> {
-    let output = Command::new("pactl")
-        .args(&["set-sink-mute", "@DEFAULT_SINK@", "toggle"])
-        .output()
-        .await?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(VolumeError::CommandFailed(format!("Failed to toggle mute: {}", stderr)));
-    }
-    
-    Ok(())
-}
-
-pub async fn volume_up() -> Result<(), VolumeError> {
-    increase_volume(1).await
-}
-
-pub async fn volume_down() -> Result<(), VolumeError> {
-    decrease_volume(1).await
 }

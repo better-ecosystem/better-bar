@@ -10,7 +10,7 @@ use crate::{
     }, ui::modules::{
         battery::battery::Battery,
         hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
-        launcher::app_launcher::LauncherWidget,
+        launcher::app_launcher::LauncherWidget, volume::volume::Volume,
     }
 };
 
@@ -28,7 +28,6 @@ pub struct PanelState {
     pub _cpu_label: Option<Label>,
     // pub _memory_label: Label,
     pub _network_label: Option<Label>,
-    pub _volume_label: Option<Label>,
 }
 
 impl PanelState {
@@ -117,17 +116,28 @@ impl PanelBuilder {
         add_gesture_blocker(&right_box);
 
         let system_info = SystemInfoModule::new();
-        let (_cpu_label, _network_label, _volume_label) =
-            if let Some((cpu, network, volume)) = system_info.create(&right_box) {
-                (Some(cpu), Some(network), Some(volume))
+        let (_cpu_label, _network_label) =
+            if let Some((cpu, network)) = system_info.create(&right_box) {
+                (Some(cpu), Some(network))
             } else {
-                (None, None, None)
+                (None, None)
             };
 
         let battery_config = Config::load().unwrap().battery;
         let battery = Battery::new(battery_config.clone());
         right_box.append(battery.widget());
-        battery.start_updates();
+
+        if config.modules.battery {
+            battery.start_updates();
+        }
+
+        let volume_config = Config::load().unwrap().volume;
+        let volume = Volume::new(volume_config.clone());
+        right_box.append(volume.widget());
+
+        if config.modules.volume {
+            volume.start_updates();
+        }
 
         main_box.set_start_widget(Some(&left_box));
         main_box.set_center_widget(Some(&center_box));
@@ -142,7 +152,6 @@ impl PanelBuilder {
             // _memory_label,
             _cpu_label,
             _network_label,
-            _volume_label,
         }
     }
 }

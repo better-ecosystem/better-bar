@@ -21,7 +21,7 @@ pub struct ModulesConfig {
     pub workspaces: bool,
 }
 
-// For battery widget config
+// For battery config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct BatteryConfig {
     pub tooltip: bool,
@@ -29,11 +29,20 @@ pub struct BatteryConfig {
     pub tooltip_format: String, // eg: Full in {time} min, if charging
 }
 
+// For volume config
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct VolumeConfig {
+    pub tooltip: bool,
+    pub format: String,         // eg: "{icon} {volume}"
+    pub tooltip_format: String, // {device_name} (not added but will be added in future)
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     pub panel: PanelConfig,
     pub modules: ModulesConfig,
     pub battery: BatteryConfig,
+    pub volume: VolumeConfig,
 }
 
 impl Config {
@@ -56,6 +65,11 @@ impl Config {
                 tooltip: true,
                 format: "{icon} {percentage}".to_string(),
                 tooltip_format: "{time}".to_string(),
+            },
+            volume: VolumeConfig {
+                format: "{icon} {volume}".to_string(),
+                tooltip: true,
+                tooltip_format: "{state}".to_string(),
             },
         }
     }

@@ -24,5 +24,6 @@ zbus = "5.7.1"
 zvariant = "5.5.3"
 clap = { version = "4.5.40", features = ["derive"] }
 anyhow = "1.0.99"
+libpulse-binding = "2.30.1"
 
 [package.metadata.bundle]

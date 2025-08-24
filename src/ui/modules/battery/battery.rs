@@ -17,16 +17,16 @@ impl Battery {
     // by default it will show icon and percentage
     // and a tooltip with time to full/ time to empty according to the battery state
     pub fn new(config: BatteryConfig) -> Self {
-        let hbox = Box::new(Orientation::Horizontal, 2);
-        hbox.add_css_class("modules");
+        let battery_box = Box::new(Orientation::Horizontal, 2);
+        battery_box.add_css_class("modules");
 
         let icon = Image::new();
         let label = Label::new(None);
-        hbox.append(&icon);
-        hbox.append(&label);
+        battery_box.append(&icon);
+        battery_box.append(&label);
 
         Self {
-            widget: hbox,
+            widget: battery_box,
             label,
             icon,
             config,
@@ -63,7 +63,7 @@ impl Battery {
                         let mut text = config.format.clone();
 
                         if let Some(perc) = b.percentage {
-                            text = text.replace("{percentage}", &format!("{}", perc));
+                            text = text.replace("{percentage}", &format!("{}%", perc));
                         }
                         if let Some(ref state) = b.state {
                             text = text.replace("{state}", &state);
@@ -80,7 +80,7 @@ impl Battery {
                         if config.tooltip {
                             let mut tooltip = config.tooltip_format.clone();
                             if let Some(perc) = b.percentage {
-                                tooltip = tooltip.replace("{percentage}", &format!("{}", perc));
+                                tooltip = tooltip.replace("{percentage}", &format!("{}%", perc));
                             }
                             if let Some(state) = &b.state {
                                 tooltip = tooltip.replace("{state}", state);
