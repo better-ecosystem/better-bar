@@ -6,7 +6,7 @@ use crate::ui::modules::{
     cpu::cpu_widget::create_cpu_widget,
     // memory::memory_widget::_create_memory_widget_percentage,
 };
-use gtk::{prelude::*, Box as GtkBox, Label};
+use gtk::{Box as GtkBox, Label, prelude::*};
 
 pub struct SystemInfoModule;
 
@@ -15,13 +15,7 @@ impl SystemInfoModule {
         Self
     }
 
-    pub fn create(
-        &self,
-        container: &GtkBox,
-    ) -> Option<(
-        Label,
-        Label,
-    )> {
+    pub fn create(&self, container: &GtkBox) -> Option<Label> {
         let config = config_helper::get_config().expect("Failed to get configuration");
 
         // let memory_label = _create_memory_widget_percentage();
@@ -36,18 +30,8 @@ impl SystemInfoModule {
             container.append(&cpu_label);
         }
 
-        let network_label = Label::new(Some("󰖩 --"));
-        network_label.set_widget_name("network");
-        network_label.add_css_class("modules");
-        if config.modules.network {
-            container.append(&network_label);
-        }
-
         if config.modules.cpu || config.modules.network {
-            Some((
-                cpu_label,
-                network_label,
-            ))
+            Some(cpu_label)
         } else {
             None
         }

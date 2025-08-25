@@ -1,2 +1,2 @@
-pub mod network_info;
-pub mod network_updater;
+pub mod network;
+pub mod network_helper;

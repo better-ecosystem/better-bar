@@ -1,3 +1,5 @@
+/* VOLUME MODULE */
+
 use crate::{
     config::config::VolumeConfig,
     ui::modules::volume::{
@@ -146,6 +148,6 @@ fn update_widget(
         tooltip = tooltip.replace("{state}", &muted_text);
         tooltip = tooltip.replace("{icon}", "");
 
-        widget.set_tooltip_text(Some(&tooltip));
+        widget.set_tooltip_markup(Some(&tooltip));
     }
 }

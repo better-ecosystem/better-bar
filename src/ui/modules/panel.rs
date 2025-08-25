@@ -5,13 +5,17 @@ use gtk::{
 
 use super::clock::ClockModule;
 use crate::{
-    config::config::Config, system::{
+    config::config::Config,
+    system::{
         global::_is_hyprland_session, system_info_modules::SystemInfoModule, updater::SystemUpdater,
-    }, ui::modules::{
+    },
+    ui::modules::{
         battery::battery::Battery,
         hyprland::{window::window_title::WindowWidget, workspace::workspaces::WorkspaceWidget},
-        launcher::app_launcher::LauncherWidget, volume::volume::Volume,
-    }
+        launcher::app_launcher::LauncherWidget,
+        network::network::Network,
+        volume::volume::Volume,
+    },
 };
 
 use crate::config::config_helper::get_config;
@@ -27,7 +31,6 @@ pub struct PanelState {
     pub _time_label: Label,
     pub _cpu_label: Option<Label>,
     // pub _memory_label: Label,
-    pub _network_label: Option<Label>,
 }
 
 impl PanelState {
@@ -116,12 +119,20 @@ impl PanelBuilder {
         add_gesture_blocker(&right_box);
 
         let system_info = SystemInfoModule::new();
-        let (_cpu_label, _network_label) =
-            if let Some((cpu, network)) = system_info.create(&right_box) {
-                (Some(cpu), Some(network))
-            } else {
-                (None, None)
-            };
+        let _cpu_label = if let Some(cpu) = system_info.create(&right_box) {
+            Some(cpu)
+        } else {
+            None
+        };
+
+        
+        let network_config = Config::load().unwrap().network;
+        let network = Network::new(network_config.clone());
+        right_box.append(network.widget());
+
+        if config.modules.network {
+            network.start_updates();
+        }
 
         let battery_config = Config::load().unwrap().battery;
         let battery = Battery::new(battery_config.clone());
@@ -151,7 +162,6 @@ impl PanelBuilder {
             _time_label,
             // _memory_label,
             _cpu_label,
-            _network_label,
         }
     }
 }

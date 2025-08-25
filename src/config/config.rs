@@ -29,6 +29,14 @@ pub struct BatteryConfig {
     pub tooltip_format: String, // eg: Full in {time} min, if charging
 }
 
+// For netwrok config
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NetworkConfig {
+    pub tooltip: bool,
+    pub format: String,         // eg: "{icon} {state} {percentage}"
+    pub tooltip_format: String, // eg: Full in {time} min, if charging
+}
+
 // For volume config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct VolumeConfig {
@@ -42,6 +50,7 @@ pub struct Config {
     pub panel: PanelConfig,
     pub modules: ModulesConfig,
     pub battery: BatteryConfig,
+    pub network: NetworkConfig,
     pub volume: VolumeConfig,
 }
 
@@ -49,27 +58,52 @@ impl Config {
     pub fn default() -> Self {
         Self {
             panel: PanelConfig {
-                position: "bottom".to_string(),
+                position: "top".to_string(),
                 height: 30,
             },
             modules: ModulesConfig {
-                cpu: true,
-                memory: true,
+                cpu: false,
+                memory: false,
                 battery: true,
                 network: true,
                 volume: true,
-                window_title: true,
-                workspaces: true,
+                window_title: false,
+                workspaces: false,
             },
             battery: BatteryConfig {
                 tooltip: true,
                 format: "{icon} {percentage}".to_string(),
-                tooltip_format: "{time}".to_string(),
+                tooltip_format: "\
+<b>Battery</b>\n\
+State: {state}\n\
+Charge: {percentage}%\n\
+Time: {time}"
+                    .to_string(),
+            },
+            network: NetworkConfig {
+                tooltip: true,
+                format: "{icon} {name}".to_string(),
+                tooltip_format: "\
+<b>Network</b>\n\
+Device: {device}\n\
+IP: {ip}\n\
+Type: {type}\n\
+Status: {status}\n\
+SSID: {name}\n\
+Signal: {signal}%\n\
+Frequency: {frequency}\n\
+Download: {download}\n\
+Upload: {upload}"
+                    .to_string(),
             },
             volume: VolumeConfig {
                 format: "{icon} {volume}".to_string(),
                 tooltip: true,
-                tooltip_format: "{state}".to_string(),
+                tooltip_format: "\
+<b>Volume</b>\n\
+Level: {percentage}%\n\
+State: {state}"
+                    .to_string(),
             },
         }
     }
